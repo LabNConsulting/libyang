@@ -120,7 +120,7 @@ lys_compile_ext(struct lysc_ctx *ctx, struct lysp_ext_instance *ext_p, struct ly
             }
         }
         if (!prefixed_name) {
-            LOGVAL(ctx->ctx, LY_VLOG_STR, ctx->path, LYVE_REFERENCE,
+            LOGVAL(ctx->ctx, LYVE_REFERENCE,
                     "Invalid XML prefix of \"%.*s\" namespace used for extension instance identifier.", u, ext_p->name);
             ret = LY_EVALID;
             goto cleanup;
@@ -133,12 +133,12 @@ lys_compile_ext(struct lysc_ctx *ctx, struct lysp_ext_instance *ext_p, struct ly
     if (!ext_mod) {
         ext_mod = u ? ly_resolve_prefix(ctx->ctx, prefixed_name, u - 1, LY_PREF_SCHEMA, ctx->pmod) : ctx->pmod->mod;
         if (!ext_mod) {
-            LOGVAL(ctx->ctx, LY_VLOG_STR, ctx->path, LYVE_REFERENCE,
+            LOGVAL(ctx->ctx, LYVE_REFERENCE,
                     "Invalid prefix \"%.*s\" used for extension instance identifier.", u, prefixed_name);
             ret = LY_EVALID;
             goto cleanup;
         } else if (!ext_mod->parsed->extensions) {
-            LOGVAL(ctx->ctx, LY_VLOG_STR, ctx->path, LYVE_REFERENCE,
+            LOGVAL(ctx->ctx, LYVE_REFERENCE,
                     "Extension instance \"%s\" refers \"%s\" module that does not contain extension definitions.",
                     prefixed_name, ext_mod->name);
             ret = LY_EVALID;
@@ -156,7 +156,7 @@ lys_compile_ext(struct lysc_ctx *ctx, struct lysp_ext_instance *ext_p, struct ly
         }
     }
     if (!ext->def) {
-        LOGVAL(ctx->ctx, LY_VLOG_STR, ctx->path, LYVE_REFERENCE,
+        LOGVAL(ctx->ctx, LYVE_REFERENCE,
                 "Extension definition of extension instance \"%s\" not found.", prefixed_name);
         ret = LY_EVALID;
         goto cleanup;
@@ -189,7 +189,7 @@ lys_compile_ext(struct lysc_ctx *ctx, struct lysp_ext_instance *ext_p, struct ly
         }
         if (!stmt) {
             /* missing extension's argument */
-            LOGVAL(ctx->ctx, LY_VLOG_STR, ctx->path, LYVE_REFERENCE,
+            LOGVAL(ctx->ctx, LYVE_REFERENCE,
                     "Extension instance \"%s\" misses argument \"%s\".", prefixed_name, ext->def->argument);
             ret = LY_EVALID;
             goto cleanup;
@@ -303,6 +303,9 @@ remove_nodelevel:
             ctx->path_len += len;
         }
     }
+
+    LOG_LOCBACK(ctx->ctx, 0, 0, 1, 0);
+    LOG_LOCSET(ctx->ctx, NULL, NULL, ctx->path, NULL);
 }
 
 /**
@@ -428,7 +431,7 @@ lys_compile_identity_circular_check(struct lysc_ctx *ctx, struct lysc_ident *ide
 
     for (u = 0; u < LY_ARRAY_COUNT(derived); ++u) {
         if (ident == derived[u]) {
-            LOGVAL(ctx->ctx, LY_VLOG_STR, ctx->path, LYVE_REFERENCE,
+            LOGVAL(ctx->ctx, LYVE_REFERENCE,
                     "Identity \"%s\" is indirectly derived from itself.", ident->name);
             ret = LY_EVALID;
             goto cleanup;
@@ -441,7 +444,7 @@ lys_compile_identity_circular_check(struct lysc_ctx *ctx, struct lysc_ident *ide
         drv = recursion.objs[v];
         for (u = 0; u < LY_ARRAY_COUNT(drv->derived); ++u) {
             if (ident == drv->derived[u]) {
-                LOGVAL(ctx->ctx, LY_VLOG_STR, ctx->path, LYVE_REFERENCE,
+                LOGVAL(ctx->ctx, LYVE_REFERENCE,
                         "Identity \"%s\" is indirectly derived from itself.", ident->name);
                 ret = LY_EVALID;
                 goto cleanup;
@@ -468,7 +471,7 @@ lys_compile_identity_bases(struct lysc_ctx *ctx, const struct lysp_module *base_
     assert((ident && enabled) || bases);
 
     if ((LY_ARRAY_COUNT(bases_p) > 1) && (ctx->pmod->version < LYS_VERSION_1_1)) {
-        LOGVAL(ctx->ctx, LY_VLOG_STR, ctx->path, LYVE_SYNTAX_YANG,
+        LOGVAL(ctx->ctx, LYVE_SYNTAX_YANG,
                 "Multiple bases in %s are allowed only in YANG 1.1 modules.", ident ? "identity" : "identityref type");
         return LY_EVALID;
     }
@@ -485,10 +488,10 @@ lys_compile_identity_bases(struct lysc_ctx *ctx, const struct lysp_module *base_
         }
         if (!mod) {
             if (ident) {
-                LOGVAL(ctx->ctx, LY_VLOG_STR, ctx->path, LYVE_SYNTAX_YANG,
+                LOGVAL(ctx->ctx, LYVE_SYNTAX_YANG,
                         "Invalid prefix used for base (%s) of identity \"%s\".", bases_p[u], ident->name);
             } else {
-                LOGVAL(ctx->ctx, LY_VLOG_STR, ctx->path, LYVE_SYNTAX_YANG,
+                LOGVAL(ctx->ctx, LYVE_SYNTAX_YANG,
                         "Invalid prefix used for base (%s) of identityref.", bases_p[u]);
             }
             return LY_EVALID;
@@ -499,7 +502,7 @@ lys_compile_identity_bases(struct lysc_ctx *ctx, const struct lysp_module *base_
             if (!strcmp(name, mod->identities[v].name)) {
                 if (ident) {
                     if (ident == &mod->identities[v]) {
-                        LOGVAL(ctx->ctx, LY_VLOG_STR, ctx->path, LYVE_REFERENCE,
+                        LOGVAL(ctx->ctx, LYVE_REFERENCE,
                                 "Identity \"%s\" is derived from itself.", ident->name);
                         return LY_EVALID;
                     }
@@ -524,10 +527,10 @@ lys_compile_identity_bases(struct lysc_ctx *ctx, const struct lysp_module *base_
                         return LY_SUCCESS;
                     }
                 }
-                LOGVAL(ctx->ctx, LY_VLOG_STR, ctx->path, LYVE_SYNTAX_YANG,
+                LOGVAL(ctx->ctx, LYVE_SYNTAX_YANG,
                         "Unable to find base (%s) of identity \"%s\".", bases_p[u], ident->name);
             } else {
-                LOGVAL(ctx->ctx, LY_VLOG_STR, ctx->path, LYVE_SYNTAX_YANG,
+                LOGVAL(ctx->ctx, LYVE_SYNTAX_YANG,
                         "Unable to find base (%s) of identityref.", bases_p[u]);
             }
             return LY_EVALID;
@@ -635,7 +638,7 @@ lys_compile_extension_instance(struct lysc_ctx *ctx, const struct lysp_ext_insta
             }
         }
         if (!substmts[u].stmt) {
-            LOGVAL(ctx->ctx, LY_VLOG_STR, ctx->path, LYVE_SYNTAX_YANG, "Invalid keyword \"%s\" as a child of \"%s%s%s\" extension instance.",
+            LOGVAL(ctx->ctx, LYVE_SYNTAX_YANG, "Invalid keyword \"%s\" as a child of \"%s%s%s\" extension instance.",
                     stmt->stmt, ext->name, ext->argument ? " " : "", ext->argument ? ext->argument : "");
             goto cleanup;
         }
@@ -666,7 +669,7 @@ lys_compile_extension_instance(struct lysc_ctx *ctx, const struct lysp_ext_insta
                     if (substmts[u].cardinality < LY_STMT_CARD_SOME) {
                         /* single item */
                         if (*((const char **)substmts[u].storage)) {
-                            LOGVAL(ctx->ctx, LY_VLOG_STR, ctx->path, LY_VCODE_DUPSTMT, stmt->stmt);
+                            LOGVAL(ctx->ctx, LY_VCODE_DUPSTMT, stmt->stmt);
                             goto cleanup;
                         }
                         units = (const char **)substmts[u].storage;
@@ -686,7 +689,7 @@ lys_compile_extension_instance(struct lysc_ctx *ctx, const struct lysp_ext_insta
                     if (substmts[u].cardinality < LY_STMT_CARD_SOME) {
                         /* single item */
                         if (*(struct lysc_type **)substmts[u].storage) {
-                            LOGVAL(ctx->ctx, LY_VLOG_STR, ctx->path, LY_VCODE_DUPSTMT, stmt->stmt);
+                            LOGVAL(ctx->ctx, LY_VCODE_DUPSTMT, stmt->stmt);
                             goto cleanup;
                         }
                         compiled = substmts[u].storage;
@@ -722,7 +725,7 @@ lys_compile_extension_instance(struct lysc_ctx *ctx, const struct lysp_ext_insta
                 /* TODO support other substatements (parse stmt to lysp and then compile lysp to lysc),
                  * also note that in many statements their extensions are not taken into account  */
                 default:
-                    LOGVAL(ctx->ctx, LY_VLOG_STR, ctx->path, LYVE_SYNTAX_YANG, "Statement \"%s\" is not supported as an extension (found in \"%s%s%s\") substatement.",
+                    LOGVAL(ctx->ctx, LYVE_SYNTAX_YANG, "Statement \"%s\" is not supported as an extension (found in \"%s%s%s\") substatement.",
                             stmt->stmt, ext->name, ext->argument ? " " : "", ext->argument ? ext->argument : "");
                     goto cleanup;
                 }
@@ -730,7 +733,7 @@ lys_compile_extension_instance(struct lysc_ctx *ctx, const struct lysp_ext_insta
         }
 
         if (((substmts[u].cardinality == LY_STMT_CARD_MAND) || (substmts[u].cardinality == LY_STMT_CARD_SOME)) && !stmt_present) {
-            LOGVAL(ctx->ctx, LY_VLOG_STR, ctx->path, LYVE_SYNTAX_YANG, "Missing mandatory keyword \"%s\" as a child of \"%s%s%s\".",
+            LOGVAL(ctx->ctx, LYVE_SYNTAX_YANG, "Missing mandatory keyword \"%s\" as a child of \"%s%s%s\".",
                     ly_stmt2str(substmts[u].stmt), ext->name, ext->argument ? " " : "", ext->argument ? ext->argument : "");
             goto cleanup;
         }
@@ -792,7 +795,7 @@ lys_compile_unres_when_cyclic(struct lyxp_set *set, const struct lysc_node *node
                 ret = lyxp_atomize(when->cond, node->module, LY_PREF_SCHEMA_RESOLVED, when->prefixes, when->context,
                         &tmp_set, LYXP_SCNODE_SCHEMA);
                 if (ret != LY_SUCCESS) {
-                    LOGVAL(set->ctx, LY_VLOG_LYSC, node, LYVE_SEMANTICS, "Invalid when condition \"%s\".", when->cond->expr);
+                    LOGVAL(set->ctx, LYVE_SEMANTICS, "Invalid when condition \"%s\".", when->cond->expr);
                     goto cleanup;
                 }
 
@@ -803,7 +806,7 @@ lys_compile_unres_when_cyclic(struct lyxp_set *set, const struct lysc_node *node
                         uint32_t idx;
                         if (lyxp_set_scnode_contains(set, tmp_set.val.scnodes[j].scnode, LYXP_NODE_ELEM, -1, &idx) &&
                                 (set->val.scnodes[idx].in_ctx == LYXP_SET_SCNODE_START_USED)) {
-                            LOGVAL(set->ctx, LY_VLOG_LYSC, node, LY_VCODE_CIRC_WHEN, node->name, set->val.scnodes[idx].scnode->name);
+                            LOGVAL(set->ctx, LY_VCODE_CIRC_WHEN, node->name, set->val.scnodes[idx].scnode->name);
                             ret = LY_EVALID;
                             goto cleanup;
                         }
@@ -844,7 +847,7 @@ lysc_check_status(struct lysc_ctx *ctx, uint16_t flags1, void *mod1, const char 
 
     if ((flg1 < flg2) && (mod1 == mod2)) {
         if (ctx) {
-            LOGVAL(ctx->ctx, LY_VLOG_STR, ctx->path, LYVE_REFERENCE,
+            LOGVAL(ctx->ctx, LYVE_REFERENCE,
                     "A %s definition \"%s\" is not allowed to reference %s definition \"%s\".",
                     flg1 == LYS_STATUS_CURR ? "current" : "deprecated", name1,
                     flg2 == LYS_STATUS_OBSLT ? "obsolete" : "deprecated", name2);
@@ -917,6 +920,8 @@ lys_compile_unres_xpath(struct lysc_ctx *ctx, const struct lysc_node *node, stru
     const struct lysc_node *op;
     const struct lys_module *mod;
 
+    LOG_LOCSET(ctx->ctx, node, NULL, NULL, NULL);
+
     memset(&tmp_set, 0, sizeof tmp_set);
     opts = LYXP_SCNODE_SCHEMA;
     if (node->flags & LYS_CONFIG_R) {
@@ -987,7 +992,7 @@ lys_compile_unres_xpath(struct lysc_ctx *ctx, const struct lysc_node *node, stru
         ret = lyxp_atomize(when[u]->cond, node->module, LY_PREF_SCHEMA_RESOLVED, when[u]->prefixes, when[u]->context,
                 &tmp_set, opts);
         if (ret) {
-            LOGVAL(ctx->ctx, LY_VLOG_LYSC, node, LYVE_SEMANTICS, "Invalid when condition \"%s\".", when[u]->cond->expr);
+            LOGVAL(ctx->ctx, LYVE_SEMANTICS, "Invalid when condition \"%s\".", when[u]->cond->expr);
             goto cleanup;
         }
 
@@ -1005,7 +1010,7 @@ lys_compile_unres_xpath(struct lysc_ctx *ctx, const struct lysc_node *node, stru
 
                 /* check dummy node accessing */
                 if (schema == node) {
-                    LOGVAL(ctx->ctx, LY_VLOG_LYSC, node, LY_VCODE_DUMMY_WHEN, node->name);
+                    LOGVAL(ctx->ctx, LY_VCODE_DUMMY_WHEN, node->name);
                     ret = LY_EVALID;
                     goto cleanup;
                 }
@@ -1036,7 +1041,7 @@ check_musts:
         /* check "must" */
         ret = lyxp_atomize(musts[u].cond, node->module, LY_PREF_SCHEMA_RESOLVED, musts[u].prefixes, node, &tmp_set, opts);
         if (ret) {
-            LOGVAL(ctx->ctx, LY_VLOG_LYSC, node, LYVE_SEMANTICS, "Invalid must restriction \"%s\".", musts[u].cond->expr);
+            LOGVAL(ctx->ctx, LYVE_SEMANTICS, "Invalid must restriction \"%s\".", musts[u].cond->expr);
             goto cleanup;
         }
 
@@ -1066,6 +1071,7 @@ check_musts:
 
 cleanup:
     lyxp_set_free_content(&tmp_set);
+    LOG_LOCBACK(ctx->ctx, 1, 0, 0, 0);
     return ret;
 }
 
@@ -1098,8 +1104,7 @@ lys_compile_unres_leafref(struct lysc_ctx *ctx, const struct lysc_node *node, st
     ly_path_free(node->module->ctx, p);
 
     if (!(target->nodetype & (LYS_LEAF | LYS_LEAFLIST))) {
-        LOGVAL(ctx->ctx, LY_VLOG_LYSC, node, LYVE_REFERENCE,
-                "Invalid leafref path \"%s\" - target node is %s instead of leaf or leaf-list.",
+        LOGVAL(ctx->ctx, LYVE_REFERENCE, "Invalid leafref path \"%s\" - target node is %s instead of leaf or leaf-list.",
                 lref->path->expr, lys_nodetype2str(target->nodetype));
         return LY_EVALID;
     }
@@ -1118,7 +1123,7 @@ lys_compile_unres_leafref(struct lysc_ctx *ctx, const struct lysc_node *node, st
     if (lref->require_instance) {
         for (siter = node->parent; siter && !(siter->nodetype & (LYS_RPC | LYS_ACTION | LYS_NOTIF)); siter = siter->parent) {}
         if (!siter && (node->flags & LYS_CONFIG_W) && (target->flags & LYS_CONFIG_R)) {
-            LOGVAL(ctx->ctx, LY_VLOG_LYSC, node, LYVE_REFERENCE, "Invalid leafref path \"%s\" - target is supposed"
+            LOGVAL(ctx->ctx, LYVE_REFERENCE, "Invalid leafref path \"%s\" - target is supposed"
                     " to represent configuration data (as the leafref does), but it does not.", lref->path->expr);
             return LY_EVALID;
         }
@@ -1129,8 +1134,8 @@ lys_compile_unres_leafref(struct lysc_ctx *ctx, const struct lysc_node *node, st
     for (type = lref->realtype; type && type->basetype == LY_TYPE_LEAFREF; type = ((struct lysc_type_leafref *)type)->realtype) {
         if (type == (struct lysc_type *)lref) {
             /* circular chain detected */
-            LOGVAL(ctx->ctx, LY_VLOG_LYSC, node, LYVE_REFERENCE,
-                    "Invalid leafref path \"%s\" - circular chain of leafrefs detected.", lref->path->expr);
+            LOGVAL(ctx->ctx, LYVE_REFERENCE, "Invalid leafref path \"%s\" - circular chain of leafrefs detected.",
+                    lref->path->expr);
             return LY_EVALID;
         }
     }
@@ -1172,11 +1177,11 @@ lys_compile_unres_dflt(struct lysc_ctx *ctx, struct lysc_node *node, struct lysc
         ctx->path[0] = '\0';
         lysc_path(node, LYSC_PATH_LOG, ctx->path, LYSC_CTX_BUFSIZE);
         if (err) {
-            LOGVAL(ctx->ctx, LY_VLOG_STR, ctx->path, LYVE_SEMANTICS,
+            LOGVAL(ctx->ctx, LYVE_SEMANTICS,
                     "Invalid default - value does not fit the type (%s).", err->msg);
             ly_err_free(err);
         } else {
-            LOGVAL(ctx->ctx, LY_VLOG_STR, ctx->path, LYVE_SEMANTICS, "Invalid default - value does not fit the type.");
+            LOGVAL(ctx->ctx, LYVE_SEMANTICS, "Invalid default - value does not fit the type.");
         }
         return ret;
     }
@@ -1270,8 +1275,7 @@ lys_compile_unres_llist_dflts(struct lysc_ctx *ctx, struct lysc_node_leaflist *l
             for (v = 0; v < u; ++v) {
                 if (!llist->dflts[u]->realtype->plugin->compare(llist->dflts[u], llist->dflts[v])) {
                     lysc_update_path(ctx, llist->parent, llist->name);
-                    LOGVAL(ctx->ctx, LY_VLOG_STR, ctx->path, LYVE_SEMANTICS,
-                            "Configuration leaf-list has multiple defaults of the same value \"%s\".",
+                    LOGVAL(ctx->ctx, LYVE_SEMANTICS, "Configuration leaf-list has multiple defaults of the same value \"%s\".",
                             llist->dflts[u]->canonical);
                     lysc_update_path(ctx, NULL, NULL);
                     return LY_EVALID;
@@ -1308,21 +1312,32 @@ lys_compile_unres_glob(struct ly_ctx *ctx, struct lys_glob_unres *unres)
      * can be also leafref, in case it is already resolved, go through the chain and check that it does not
      * point to the starting leafref type). The second round stores the first non-leafref type for later data validation. */
     for (i = 0; i < unres->leafrefs.count; ++i) {
+        LY_ERR ret = LY_SUCCESS;
         node = unres->leafrefs.objs[i];
         cctx.cur_mod = node->module;
         cctx.pmod = node->module->parsed;
 
+        LOG_LOCSET(ctx, node, NULL, NULL, NULL);
+
         assert(node->nodetype & (LYS_LEAF | LYS_LEAFLIST));
         type = ((struct lysc_node_leaf *)node)->type;
         if (type->basetype == LY_TYPE_LEAFREF) {
-            LY_CHECK_RET(lys_compile_unres_leafref(&cctx, node, (struct lysc_type_leafref *)type, unres));
+            ret = lys_compile_unres_leafref(&cctx, node, (struct lysc_type_leafref *)type, unres);
         } else if (type->basetype == LY_TYPE_UNION) {
             LY_ARRAY_FOR(((struct lysc_type_union *)type)->types, v) {
                 if (((struct lysc_type_union *)type)->types[v]->basetype == LY_TYPE_LEAFREF) {
                     lref = (struct lysc_type_leafref *)((struct lysc_type_union *)type)->types[v];
-                    LY_CHECK_RET(lys_compile_unres_leafref(&cctx, node, lref, unres));
+                    ret = lys_compile_unres_leafref(&cctx, node, lref, unres);
+                    if (ret) {
+                        break;
+                    }
                 }
             }
+        }
+
+        LOG_LOCBACK(ctx, 1, 0, 0, 0);
+        if (ret) {
+            return ret;
         }
     }
     while (unres->leafrefs.count) {
@@ -1469,8 +1484,9 @@ lys_compile_unres_mod(struct lysc_ctx *ctx)
     for (i = 0; i < ctx->disabled.count; ++i) {
         node = ctx->disabled.snodes[i];
         if (node->flags & LYS_KEY) {
-            LOGVAL(ctx->ctx, LY_VLOG_LYSC, node, LYVE_REFERENCE, "Key \"%s\" is disabled by its if-features.",
-                    node->name);
+            LOG_LOCSET(ctx->ctx, node, NULL, NULL, NULL);
+            LOGVAL(ctx->ctx, LYVE_REFERENCE, "Key \"%s\" is disabled by its if-features.", node->name);
+            LOG_LOCBACK(ctx->ctx, 1, 0, 0, 0);
             return LY_EVALID;
         }
 
@@ -1518,8 +1534,7 @@ lys_compile_unres_mod(struct lysc_ctx *ctx)
     /* check that all augments were applied */
     for (i = 0; i < ctx->augs.count; ++i) {
         aug = ctx->augs.objs[i];
-        LOGVAL(ctx->ctx, LY_VLOG_NONE, NULL, LYVE_REFERENCE,
-                "Augment target node \"%s\" from module \"%s\" was not found.", aug->nodeid->expr,
+        LOGVAL(ctx->ctx, LYVE_REFERENCE, "Augment target node \"%s\" from module \"%s\" was not found.", aug->nodeid->expr,
                 LYSP_MODULE_NAME(aug->nodeid_pmod));
     }
     if (ctx->augs.count) {
@@ -1529,9 +1544,8 @@ lys_compile_unres_mod(struct lysc_ctx *ctx)
     /* check that all deviations were applied */
     for (i = 0; i < ctx->devs.count; ++i) {
         dev = ctx->devs.objs[i];
-        LOGVAL(ctx->ctx, LY_VLOG_NONE, NULL, LYVE_REFERENCE,
-                "Deviation(s) target node \"%s\" from module \"%s\" was not found.", dev->nodeid->expr,
-                LYSP_MODULE_NAME(dev->dev_pmods[0]));
+        LOGVAL(ctx->ctx, LYVE_REFERENCE, "Deviation(s) target node \"%s\" from module \"%s\" was not found.",
+                dev->nodeid->expr, LYSP_MODULE_NAME(dev->dev_pmods[0]));
     }
     if (ctx->devs.count) {
         return LY_ENOTFOUND;
@@ -1799,10 +1813,12 @@ lys_compile(struct lys_module *mod, uint32_t options, struct lys_glob_unres *unr
     /* finish compilation for all unresolved module items in the context */
     LY_CHECK_GOTO(ret = lys_compile_unres_mod(&ctx), error);
 
+    LOG_LOCBACK(ctx.ctx, 0, 0, 1, 0);
     lys_compile_unres_mod_erase(&ctx, 0);
     return LY_SUCCESS;
 
 error:
+    LOG_LOCBACK(ctx.ctx, 0, 0, 1, 0);
     lys_precompile_augments_deviations_revert(ctx.ctx, mod);
     lys_compile_unres_mod_erase(&ctx, 1);
     lysc_module_free(mod_c, NULL);

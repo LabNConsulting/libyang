@@ -98,12 +98,10 @@ void ly_log(const struct ly_ctx *ctx, LY_LOG_LEVEL level, LY_ERR no, const char 
  * @brief Print Validation error and store it into the context (if provided).
  *
  * @param[in] ctx libyang context to store the error record. If not provided, the error is just printed.
- * @param[in] elem_type Type of the data in @p elem variable.
- * @param[in] elem Object to provide more information about the place where the error appeared.
  * @param[in] code Validation error code.
  * @param[in] format Format string to print.
  */
-void ly_vlog(const struct ly_ctx *ctx, enum LY_VLOG_ELEM elem_type, const void *elem, LY_VECODE code, const char *format, ...);
+void ly_vlog(const struct ly_ctx *ctx, LY_VECODE code, const char *format, ...);
 
 /**
  * @brief Logger's location data setter.
@@ -178,7 +176,10 @@ void ly_log_dbg(uint32_t group, const char *format, ...);
 #define LOGMEM(CTX) LOGERR(CTX, LY_EMEM, "Memory allocation failed (%s()).", __func__)
 #define LOGINT(CTX) LOGERR(CTX, LY_EINT, "Internal error (%s:%d).", __FILE__, __LINE__)
 #define LOGARG(CTX, ARG) LOGERR(CTX, LY_EINVAL, "Invalid argument %s (%s()).", #ARG, __func__)
-#define LOGVAL(CTX, ELEM_TYPE, ELEM, CODE, ...) ly_vlog(CTX, ELEM_TYPE, ELEM, CODE, ##__VA_ARGS__)
+#define LOGVAL(CTX, CODE, ...) ly_vlog(CTX, CODE, ##__VA_ARGS__)
+#define LOGVAL_LINE(CTX, LINE, CODE, ...) \
+    ly_log_location(CTX, NULL, NULL, NULL, NULL, LINE, 0); \
+    ly_vlog(CTX, CODE, ##__VA_ARGS__)
 
 #define LOGMEM_RET(CTX) LOGMEM(CTX); return LY_EMEM
 #define LOGINT_RET(CTX) LOGINT(CTX); return LY_EINT

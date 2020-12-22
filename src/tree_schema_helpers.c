@@ -94,11 +94,7 @@ lysp_check_date(struct lys_parser_ctx *ctx, const char *date, uint8_t date_len, 
 
 error:
     if (stmt) {
-        if (ctx) {
-            LOGVAL_PARSER(ctx, LY_VCODE_INVAL, date_len, date, stmt);
-        } else {
-            LOGVAL(NULL, LY_VLOG_NONE, NULL, LY_VCODE_INVAL, date_len, date, stmt);
-        }
+        LOGVAL_PARSER(ctx, LY_VCODE_INVAL, date_len, date, stmt);
     }
     return LY_EINVAL;
 }
@@ -988,8 +984,7 @@ search_file:
         inc->submodule = submod;
     }
     if (!inc->submodule) {
-        LOGVAL(ctx, LY_VLOG_NONE, NULL, LYVE_REFERENCE, "Including \"%s\" submodule into \"%s\" failed.",
-                inc->name, pctx->parsed_mod->mod->name);
+        LOGVAL(ctx, LYVE_REFERENCE, "Including \"%s\" submodule into \"%s\" failed.", inc->name, pctx->parsed_mod->mod->name);
         return LY_EVALID;
     }
 
